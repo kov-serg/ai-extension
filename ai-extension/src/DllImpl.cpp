@@ -42,6 +42,7 @@ static int reg_delete_tree(HKEY root,wchar_t *path) {
 static int reg_delete(HKEY root,wchar_t *path) {
 	LSTATUS status;
 	status=RegDeleteKeyW(root,path);
+	dbglog("reg_delete hr=%X", status);
 	return status!=NOERROR;
 }
 
@@ -89,7 +90,6 @@ extern "C" HRESULT __stdcall DllRegisterServer() {
 extern "C" HRESULT __stdcall DllUnregisterServer() {
 	dbglog("DllUnregisterServer");
 	int err=0;
-	err|=reg_delete(HKEY_CLASSES_ROOT,L"CLSID\\" szCLSID_AIThumbnailProvider L"\\InprocServer32\\ThreadingModel");
 	err|=reg_delete(HKEY_CLASSES_ROOT,L"CLSID\\" szCLSID_AIThumbnailProvider L"\\InprocServer32");
 	err|=reg_delete(HKEY_CLASSES_ROOT,L"CLSID\\" szCLSID_AIThumbnailProvider);
 	err|=reg_delete(HKEY_CLASSES_ROOT,L".ai\\shellex\\" szCLSID_IThumbnailProvider);
