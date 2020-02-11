@@ -1,7 +1,4 @@
-/bin/Debug-Win32
-/bin/Debug-x64
-/bin/Release-Win32
-/bin/Release-x64
+/bin/*
 *.ncb
 *.suo
 *.user
