@@ -30,12 +30,16 @@ static int reg_write(HKEY root,wchar_t *path,wchar_t* key,wchar_t *value) {
 	status=RegSetValueExW(hkey,key,0,REG_SZ,(BYTE*)value,(DWORD)(1+wcslen(value))*sizeof(*value));
 	return status!=NOERROR;
 }
-static int reg_delete(HKEY root,wchar_t *path) {
+
+/*
+static int reg_delete_tree(HKEY root,wchar_t *path) {
 	LSTATUS status;
 	status=RegDeleteTreeW(root,path);
 	return status!=NOERROR;
 }
-static int reg_delete1(HKEY root,wchar_t *path) {
+*/
+
+static int reg_delete(HKEY root,wchar_t *path) {
 	LSTATUS status;
 	status=RegDeleteKeyW(root,path);
 	return status!=NOERROR;
@@ -84,11 +88,16 @@ extern "C" HRESULT __stdcall DllRegisterServer() {
 } 	
 extern "C" HRESULT __stdcall DllUnregisterServer() {
 	dbglog("DllUnregisterServer");
-	int err=reg_delete(HKEY_CLASSES_ROOT,L"CLSID\\" szCLSID_AIThumbnailProvider);
-	err|=reg_delete1(HKEY_CLASSES_ROOT,L".ai\\shellex\\" szCLSID_IThumbnailProvider);
-	err|=reg_delete1(HKEY_CLASSES_ROOT,L".ait\\shellex\\" szCLSID_IThumbnailProvider);
-	err|=reg_delete1(HKEY_CLASSES_ROOT,L".eps\\shellex\\" szCLSID_IThumbnailProvider);
-	err|=reg_delete1(HKEY_LOCAL_MACHINE,L"Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved\\" szCLSID_AIThumbnailProvider);
+	int err=0;
+	err|=reg_delete(HKEY_CLASSES_ROOT,L"CLSID\\" szCLSID_AIThumbnailProvider L"\\InprocServer32\\ThreadingModel");
+	err|=reg_delete(HKEY_CLASSES_ROOT,L"CLSID\\" szCLSID_AIThumbnailProvider L"\\InprocServer32");
+	err|=reg_delete(HKEY_CLASSES_ROOT,L"CLSID\\" szCLSID_AIThumbnailProvider);
+	err|=reg_delete(HKEY_CLASSES_ROOT,L".ai\\shellex\\" szCLSID_IThumbnailProvider);
+	err|=reg_delete(HKEY_CLASSES_ROOT,L".ait\\shellex\\" szCLSID_IThumbnailProvider);
+	err|=reg_delete(HKEY_CLASSES_ROOT,L".eps\\shellex\\" szCLSID_IThumbnailProvider);
+	err|=reg_delete(HKEY_LOCAL_MACHINE,L"Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved\\" szCLSID_AIThumbnailProvider);
+
+	if (!err) SHChangeNotify(SHCNE_ASSOCCHANGED,SHCNF_IDLIST,0,0);
 	return err ? E_FAIL : S_OK;
 } 
 
