@@ -1,0 +1,10 @@
+// guids.h
+#pragma once
+#include <guiddef.h>
+
+#define szCLSID_IThumbnailProvider L"{E357FCCD-A995-4576-B01F-234630154E96}"
+DEFINE_GUID(CLSID_IThumbnailProvider, 0xE357FCCD, 0xA995, 0x4576, 0xB0, 0x1F, 0x23, 0x46, 0x30, 0x15, 0x4e, 0x96);
+
+#define szCLSID_AIThumbnailProvider L"{30F43D90-4F4F-4715-9E3D-7327BE827939}"
+DEFINE_GUID(CLSID_AIThumbnailProvider, 0x30f43d90, 0x4f4f, 0x4715, 0x9e, 0x3d, 0x73, 0x27, 0xbe, 0x82, 0x79, 0x39);
+
