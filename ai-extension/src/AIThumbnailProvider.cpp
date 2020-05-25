@@ -187,12 +187,12 @@ HRESULT __stdcall AIThumbnailProvider::GetThumbnail(UINT cx,HBITMAP *phbmp,WTS_A
 	dbglog("GetThumbnail cx=%d",cx);
 
 	ZeroMemory(bmi,sizeof(*bmi));
-    bmi->bmiHeader.biSize=sizeof(bmi->bmiHeader);
-    bmi->bmiHeader.biWidth=w;
-    bmi->bmiHeader.biHeight=-h;
-    bmi->bmiHeader.biPlanes=1;
-    bmi->bmiHeader.biBitCount=32;
-    bmi->bmiHeader.biCompression=BI_RGB;
+	bmi->bmiHeader.biSize=sizeof(bmi->bmiHeader);
+	bmi->bmiHeader.biWidth=w;
+	bmi->bmiHeader.biHeight=-h;
+	bmi->bmiHeader.biPlanes=1;
+	bmi->bmiHeader.biBitCount=32;
+	bmi->bmiHeader.biCompression=BI_RGB;
 	hbmp=CreateDIBSection(0,bmi,DIB_RGB_COLORS,(void**)&pBits,0,0); if (!hbmp) {
 		dbglog("unable to create DIB");
 		goto leave;
