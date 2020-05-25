@@ -103,10 +103,37 @@ HRESULT __stdcall AIThumbnailProvider::Initialize(IStream *stream,DWORD grfMode)
 	}*/
 	return S_OK;
 }
-static void drawJPG(HDC dc,int w,int h,IStream *stream) {
+struct Bitmap { DWORD* data; int w,h,bpl; };
+static void fillRect(Bitmap *bitmap,RECT *rect,DWORD color) {
+	int y,x,w,h,x1,y1,x2,y2;
+	w=bitmap->w; h=bitmap->h;
+	if (rect) { x1=rect->left; y1=rect->top; x2=rect->right; y2=rect->bottom; }
+	else { x1=0; y1=0; x2=w; y2=h; }
+	if (x1<0) x1=0; if (x1>w) x1=w;	if (x2<0) x2=0; if (x2>w) x2=w;
+	if (y1<0) y1=0; if (y1>h) y1=h;	if (y2<0) y2=0; if (y2>h) y2=h;
+	if (x1>=x2 || y1>=y2) return;
+	for(y=y1;y<y2;y++) {
+		DWORD *line=(DWORD*)((char*)bitmap->data+y*bitmap->bpl);
+		for(x=x1;x<x2;x++) line[x]=color;
+	}
+}
+static void maskRect(Bitmap *bitmap,RECT *rect,DWORD color,DWORD mask) {
+	int y,x,w,h,x1,y1,x2,y2;
+	w=bitmap->w; h=bitmap->h;
+	if (rect) { x1=rect->left; y1=rect->top; x2=rect->right; y2=rect->bottom; }
+	else { x1=0; y1=0; x2=w; y2=h; }
+	if (x1<0) x1=0; if (x1>w) x1=w;	if (x2<0) x2=0; if (x2>w) x2=w;
+	if (y1<0) y1=0; if (y1>h) y1=h;	if (y2<0) y2=0; if (y2>h) y2=h;
+	if (x1>=x2 || y1>=y2) return;
+	for(y=y1;y<y2;y++) {
+		DWORD *line=(DWORD*)((char*)bitmap->data+y*bitmap->bpl);
+		for(x=x1;x<x2;x++) line[x]=(line[x]&mask)|color;
+	}
+}
+static void drawJPG(HDC dc,int w,int h,IStream *stream,Bitmap *bmp) {
 	enum { HIMETRIC_INCH=2540 }; // HIMETRIC units per inch
 	IPicture *picture=0;
-	HRESULT hr;
+	HRESULT hr; int w1,h1;
 	//dbglog("drawJPG w=%d h=%d",w,h);
 	{ LARGE_INTEGER pos; pos.QuadPart=0; stream->Seek(pos,STREAM_SEEK_SET,0); }
 	#if 0
@@ -126,19 +153,22 @@ static void drawJPG(HDC dc,int w,int h,IStream *stream) {
 	if (SUCCEEDED(hr)) {
 		RECT bounds[1];
 		LONG hmw,hmh;
-		bounds->left=0;
-		bounds->top=0;
-		bounds->right=w;
-		bounds->bottom=h;
 		picture->get_Width(&hmw);
 		picture->get_Height(&hmh);
 		dbglog("OleLoadPicture hmw=%d hmh=%d",hmw,hmh);
         int nw=MulDiv(hmw,GetDeviceCaps(dc,LOGPIXELSX),HIMETRIC_INCH);
         int nh=MulDiv(hmh,GetDeviceCaps(dc,LOGPIXELSY),HIMETRIC_INCH);
-		dbglog("OleLoadPicture nw=%d nh=%d",nw,nh);
+		dbglog("OleLoadPicture nw=%dpix nh=%dpix",nw,nh);
+		if (hmw>hmh) { w1=w; h1=h*hmh/hmw; } else { w1=w*hmw/hmh; h1=h; }
+		dbglog("OleLoadPicture w1=%d h1=%d",w1,h1);
+		bounds->left=(w-w1)/2;
+		bounds->top =(h-h1)/2;
+		bounds->right=bounds->left+w1;
+		bounds->bottom=bounds->top+h1;
 		hr=picture->Render(dc,
-			bounds->left,bounds->top,w,h,
+			bounds->left,bounds->top,w1,h1,
 			0,hmh,hmw,-hmh,bounds);
+		if (bmp) maskRect(bmp,bounds,0xFF000000,0xFFFFFF);
 		dbglog("Render hr=%08X",hr);
 	}
 	if (picture) picture->Release();
@@ -150,10 +180,10 @@ HRESULT __stdcall AIThumbnailProvider::GetThumbnail(UINT cx,HBITMAP *phbmp,WTS_A
 	IStream *stream=0;
 	LONG size=0;
 	IPicture *picture=0;
-	int w=cx, h=cx, bpl, x,y;
+	int w=cx, h=cx;
 	BYTE *pBits=0;
-	HBITMAP hbmp;
-	BITMAPINFO bmi[1];
+	HBITMAP hbmp; HDC dc;
+	BITMAPINFO bmi[1]; Bitmap bmp[1];
 	dbglog("GetThumbnail cx=%d",cx);
 
 	ZeroMemory(bmi,sizeof(*bmi));
@@ -163,18 +193,16 @@ HRESULT __stdcall AIThumbnailProvider::GetThumbnail(UINT cx,HBITMAP *phbmp,WTS_A
     bmi->bmiHeader.biPlanes=1;
     bmi->bmiHeader.biBitCount=32;
     bmi->bmiHeader.biCompression=BI_RGB;
-	bpl=4*w;
 	hbmp=CreateDIBSection(0,bmi,DIB_RGB_COLORS,(void**)&pBits,0,0); if (!hbmp) {
 		dbglog("unable to create DIB");
 		goto leave;
 	}
-	for(y=0;y<h;y++) {
-		DWORD *d=(DWORD*)(pBits+bpl*y);
-		for(x=0;x<w;x++) d[x]=((x*x+y*y)&255)*0x10101;
-	}
-	HDC dc=CreateCompatibleDC(0);
+	bmp->data=(DWORD*)((char*)pBits);//+4*w*(h-1));
+	bmp->bpl=4*w; bmp->w=w; bmp->h=h;
+	fillRect(bmp,0,0x00FFFFFF);
+	dc=CreateCompatibleDC(0);
 	SelectObject(dc,hbmp);
-	drawJPG(dc,w,h,memstream);
+	drawJPG(dc,w,h,memstream,bmp);
 	DeleteDC(dc);
 
 	if (phbmp) {

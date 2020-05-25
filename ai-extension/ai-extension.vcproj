@@ -64,6 +64,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				OutputFile="$(OutDir)\$(ProjectName)-x32.dll"
 				LinkIncremental="1"
 				ModuleDefinitionFile="ai-extension.def"
 				GenerateDebugInformation="true"
@@ -139,6 +140,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				OutputFile="$(OutDir)\$(ProjectName)-x64.dll"
 				LinkIncremental="1"
 				ModuleDefinitionFile="ai-extension.def"
 				GenerateDebugInformation="true"
@@ -215,6 +217,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				OutputFile="$(OutDir)\$(ProjectName)-x32.dll"
 				LinkIncremental="1"
 				ModuleDefinitionFile="ai-extension.def"
 				GenerateDebugInformation="true"
@@ -295,6 +298,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				OutputFile="$(OutDir)\$(ProjectName)-x64.dll"
 				LinkIncremental="1"
 				ModuleDefinitionFile="ai-extension.def"
 				GenerateDebugInformation="true"
