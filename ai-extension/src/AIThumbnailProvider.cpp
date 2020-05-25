@@ -197,8 +197,8 @@ HRESULT __stdcall AIThumbnailProvider::GetThumbnail(UINT cx,HBITMAP *phbmp,WTS_A
 		dbglog("unable to create DIB");
 		goto leave;
 	}
-	bmp->data=(DWORD*)((char*)pBits);//+4*w*(h-1));
-	bmp->bpl=4*w; bmp->w=w; bmp->h=h;
+	bmp->data=(DWORD*)((char*)pBits+4*w*(h-1));
+	bmp->bpl=-4*w; bmp->w=w; bmp->h=h;
 	fillRect(bmp,0,0x00FFFFFF);
 	dc=CreateCompatibleDC(0);
 	SelectObject(dc,hbmp);
